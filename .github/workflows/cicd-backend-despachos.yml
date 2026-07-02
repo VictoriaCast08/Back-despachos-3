@@ -1,0 +1,47 @@
+name: CI/CD Backend Despachos - EKS Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "1. Checkout del codigo"
+        uses: actions/checkout@v4
+
+      - name: "2. Configurar credenciales AWS"
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: "3. Login a Amazon ECR"
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: "4. Build de la imagen Docker"
+        run: |
+          docker build -t backend-despacho ./Springboot-API-REST-DESPACHO
+
+      - name: "5. Etiquetar imagen para ECR"
+        run: |
+          docker tag backend-despacho:latest ${{ secrets.ECR_REGISTRY }}/backend-despacho:latest
+
+      - name: "6. Push imagen a ECR"
+        run: |
+          docker push ${{ secrets.ECR_REGISTRY }}/backend-despacho:latest
+
+      - name: "7. Configurar kubectl"
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+
+      - name: "8. Deploy en EKS"
+        run: |
+          kubectl rollout restart deployment/backend-despachos -n innovatech
+          kubectl rollout status deployment/backend-despachos -n innovatech --timeout=180s

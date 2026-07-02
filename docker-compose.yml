@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  db-despachos:
+    image: mysql:8
+    container_name: db-despachos
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Admin_Root_123!
+      MYSQL_DATABASE: despachos_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: Apppass_Despachos_123!
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata_despachos:/var/lib/mysql
+    networks:
+      - despachos_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  backend-despachos:
+    build:
+      context: ./Springboot-API-REST-DESPACHO
+      dockerfile: Dockerfile
+    container_name: backend-despachos
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-despachos:3306/despachos_db?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: appuser # usuario de mínimo privilegio
+      SPRING_DATASOURCE_PASSWORD: Apppass_Despachos_123!
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      db-despachos:
+        condition: service_healthy
+    networks:
+      - despachos_net
+
+volumes:
+  dbdata_despachos:
+
+networks:
+  despachos_net:
+    driver: bridge
