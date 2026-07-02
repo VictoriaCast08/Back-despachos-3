@@ -3,7 +3,7 @@ name: CI/CD Backend Despachos - EKS Deploy
 on:
   push:
     branches:
-      - main
+      - deploy
 
 jobs:
   build-and-deploy:
@@ -26,15 +26,15 @@ jobs:
 
       - name: "4. Build de la imagen Docker"
         run: |
-          docker build -t backend-despacho ./Springboot-API-REST-DESPACHO
+          docker build -t backend-despachos ./Springboot-API-REST-DESPACHO
 
       - name: "5. Etiquetar imagen para ECR"
         run: |
-          docker tag backend-despacho:latest ${{ secrets.ECR_REGISTRY }}/backend-despacho:latest
+          docker tag backend-despachos:latest ${{ secrets.ECR_REGISTRY }}/backend-despachos:latest
 
       - name: "6. Push imagen a ECR"
         run: |
-          docker push ${{ secrets.ECR_REGISTRY }}/backend-despacho:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/backend-despachos:latest
 
       - name: "7. Configurar kubectl"
         run: |
